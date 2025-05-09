@@ -13,68 +13,77 @@ class UserRoleSeeder extends Seeder
 {
     public function run(): void
     {
-        // Semua permission berdasarkan route
+        // ====================
+        // 🔐 DAFTAR PERMISSIONS
+        // ====================
         $permissions = [
-            // User
+            // Manajemen User
             'lihat-user',
             'tambah-user',
             'edit-user',
             'hapus-user',
 
-            // Paket
+            // Manajemen Paket
             'lihat-paket',
             'tambah-paket',
             'edit-paket',
             'hapus-paket',
 
-            // Jadwal Siswa
+            // Manajemen Jadwal Siswa
             'lihat-jadwal-siswa',
             'tambah-jadwal-siswa',
             'edit-jadwal-siswa',
             'hapus-jadwal-siswa',
+            'lihat-semua-pending-jadwal',
 
-            // Pesanan
+            // Manajemen Pesanan
             'lihat-pesanan',
             'tambah-pesanan',
             'edit-pesanan',
             'hapus-pesanan',
+            'lihat-semua-detail'
         ];
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Buat roles
+        // ===============
+        // 🎭 DAFTAR ROLES
+        // ===============
         $roles = ['Owner', 'Instruktur', 'Siswa', 'Kasir'];
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role]);
         }
 
+        // ====================
+        // 🔑 SET PERMISSION KE ROLE
+        // ====================
+
         // Role: Siswa
-        Role::findByName('Siswa')->givePermissionTo([
-            'lihat-paket',              // Lihat paket
-            'tambah-pesanan',           // Pesan paket
-            'tambah-jadwal-siswa',      // Pilih jadwal
+        Role::findByName('Siswa')->syncPermissions([
+            'lihat-paket',
+            'tambah-pesanan',
+            'tambah-jadwal-siswa',
+            'lihat-pesanan',
         ]);
 
         // Role: Instruktur
-        Role::findByName('Instruktur')->givePermissionTo([
-            'lihat-jadwal-siswa',       // Lihat semua jadwal
-            'edit-jadwal-siswa',        // Ambil jadwal dan ubah statusnya
-        ]);
-
-        // Role: Kasir
-        Role::findByName('Kasir')->givePermissionTo([
-            $permissions
-        ]);
-
-        // Role: Owner
-        Role::findByName('Owner')->givePermissionTo([
+        Role::findByName('Instruktur')->syncPermissions([
             'lihat-jadwal-siswa',
+            'lihat-semua-pending-jadwal',
+            'edit-jadwal-siswa',
         ]);
 
+        // Role: Kasir (akses penuh terhadap paket, jadwal, dan pesanan)
+        Role::findByName('Kasir')->syncPermissions($permissions);
 
-        // Create Users
+        // Role: Owner (akses penuh semua permission)
+        Role::findByName('Owner')->syncPermissions(Permission::all());
+
+        // ====================
+        // 👤 BUAT USER DEFAULT
+        // ====================
         $users = [
             ['name' => 'Owner', 'username' => 'owner', 'no_hp' => '081234567890', 'email' => 'owner@example.com', 'role' => 'Owner', 'password' => 'owner'],
             ['name' => 'Instruktur', 'username' => 'instruktur', 'no_hp' => '081234567891', 'email' => 'instruktur@example.com', 'role' => 'Instruktur', 'password' => 'instruktur'],
@@ -82,23 +91,24 @@ class UserRoleSeeder extends Seeder
             ['name' => 'Kasir', 'username' => 'kasir', 'no_hp' => '081234567893', 'email' => 'kasir@example.com', 'role' => 'Kasir', 'password' => 'kasir'],
         ];
 
-        foreach ($users as $userData) {
+        foreach ($users as $data) {
             $user = User::factory()->create([
-                'name' => $userData['name'],
-                'username' => $userData['username'],
-                'no_hp' => $userData['no_hp'],
-                'email' => $userData['email'],
-                'password' => Hash::make($userData['password']),
+                'name' => $data['name'],
+                'username' => $data['username'],
+                'no_hp' => $data['no_hp'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
             ]);
-
-            $user->assignRole($userData['role']);
+            $user->assignRole($data['role']);
         }
 
-        // Insert Paket
+        // =====================
+        // 📦 CONTOH DATA PAKET
+        // =====================
         DB::table('paket')->insert([
             [
                 'nama_paket' => 'Paket Reguler',
-                'jumlah_jam' => '15',
+                'jumlah_jam' => 15,
                 'deskripsi' => 'Paket belajar reguler selama 15 jam. Senin - Jumat',
                 'harga' => 2300000.00,
                 'created_at' => now(),
@@ -106,7 +116,7 @@ class UserRoleSeeder extends Seeder
             ],
             [
                 'nama_paket' => 'Paket Private',
-                'jumlah_jam' => '15',
+                'jumlah_jam' => 15,
                 'deskripsi' => 'Paket belajar private selama 15 jam. Setiap hari',
                 'harga' => 2350000.00,
                 'created_at' => now(),

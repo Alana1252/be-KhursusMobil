@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('jadwal', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pesanan_id')->constrained('pesanan', 'id');
-            $table->foreignId('instruktur_id')->constrained('users', 'id');
+            $table->foreignId('pesanan_id')->constrained('pesanan', 'id')->cascadeOnDelete();
+            $table->foreignId('instruktur_id')
+            ->nullable()
+            ->constrained('users', 'id')
+            ->cascadeOnDelete();
             $table->date('tanggal');
             $table->time('waktu_mulai');
             $table->time('waktu_selesai')->nullable();
-            $table->enum('status', ['ongoing', 'finished', 'canceled'])->default('ongoing');
+            $table->enum('status', ['ongoing', 'pending', 'finished', 'canceled'])->default('ongoing');
             $table->timestamps();
         });
     }

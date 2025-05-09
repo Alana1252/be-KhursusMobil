@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jadwal;
@@ -51,22 +51,59 @@ class JadwalSiswaController extends Controller
      */
     public function show(string $id)
     {
-        
+        $jadwal = Jadwal::with('pesanan', 'instruktur')->findOrFail($id);
+        return response()->json([
+            'success' => true,
+            'data' => $jadwal
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function completedJadwal(Request $request, string $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'status' => ['required', 'in:finished,canceled']
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
+    
+        // Ambil jadwal dengan status ongoing dan id sesuai
+        $jadwal = Jadwal::where('id', $id)->where('status', 'ongoing')->first();
+    
+        if (!$jadwal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal dengan status ongoing tidak ditemukan'
+            ], 404);
+        }
+    
+        $jadwal->waktu_selesai = Carbon::now()->toTimeString();
+        $jadwal->status = $request->status;
+        $jadwal->save();
+    
+        return response()->json([
+            'success' => true,
+            'data' => $jadwal
+        ]);
     }
-
+    
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        //
+        $jadwal = Jadwal::findOrFail($id);
+        $jadwal->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Jadwal berhasil dihapus'
+        ]);
     }
 }

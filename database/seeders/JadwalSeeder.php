@@ -13,30 +13,30 @@ class JadwalSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ambil user instruktur pertama (dengan role instruktur)
         $instruktur = User::role('instruktur')->first();
+        $siswa = User::role('siswa')->get();
+        $paket = Paket::all();
+        $mobil = ['Toyota Avanza', 'Honda Brio', 'Suzuki Ertiga', 'Daihatsu Xenia', 'Nissan Grand Livina'];
 
-        // Ambil user siswa pertama (dengan role siswa)
-        $siswa = User::role('siswa')->first();
+        for ($i = 0; $i < 6; $i++) {
+            $pesanan = Pesanan::create([
+                'user_id' => $siswa->random()->id,
+                'paket_id' => $paket->random()->id,
+                'mobil' => $mobil[array_rand($mobil)],
+                'status' => ['pending', 'success', 'processing'][array_rand(['pending', 'success', 'processing'])]
+            ]);
 
-        // Ambil paket pertama
-        $paket = Paket::first();
-
-        // Buat pesanan dummy
-        $pesanan = Pesanan::create([
-            'user_id' => $siswa->id,
-            'paket_id' => $paket->id,
-            'status' => 'processing'
-        ]);
-
-        // Buat jadwal dummy
-        Jadwal::create([
-            'pesanan_id' => $pesanan->id,
-            'instruktur_id' => $instruktur->id,
-            'tanggal' => Carbon::today()->toDateString(),
-            'waktu_mulai' => Carbon::now()->toTimeString(),
-            'waktu_selesai' => Carbon::now()->addHours(2)->toTimeString(),
-            'status' => 'ongoing',
-        ]);
+            for ($j = 0; $j < 7; $j++) {
+                $startDate = Carbon::now()->addDays(rand(1, 30));
+                Jadwal::create([
+                    'pesanan_id' => $pesanan->id,
+                    'instruktur_id' => $instruktur->id,
+                    'tanggal' => $startDate->toDateString(),
+                    'waktu_mulai' => $startDate->format('H:i:s'),
+                    'waktu_selesai' => $startDate->addHours(2)->format('H:i:s'),
+                    'status' => ['pending', 'ongoing', 'finished'][array_rand(['pending', 'ongoing', 'finished'])],
+                ]);
+            }
+        }
     }
 }

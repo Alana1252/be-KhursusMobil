@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jadwal;
@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class PesananController extends Controller
 {
@@ -46,9 +48,12 @@ class PesananController extends Controller
                 'pesanan_id' => $pesanan->id,
                 'nama_user' => $pesanan->user->name,
                 'nama_paket' => $pesanan->paket->nama_paket,
+                'status' => $pesanan->status,
                 'jumlah_jam_paket' => $totalJamPaket,
+                'mobil' => $pesanan->mobil,
                 'jam_terpakai' => round($totalJamTerpakai, 2),
                 'jam_sisa' => round(max($sisaJam, 0), 2),
+                'bukti_pembayaran' => env('APP_STORAGE') . $pesanan->bukti_pembayaran,
             ];  
         });
     
@@ -69,6 +74,7 @@ class PesananController extends Controller
 
         $validator = Validator::make($request->all(), [
             'id_paket' => ['required', 'exists:paket,id'],
+            'mobil' => ['required', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -81,6 +87,7 @@ class PesananController extends Controller
         $pesanan = Pesanan::create([
             'paket_id' => $request->id_paket,
             'user_id' => $user->id,
+            'mobil' => $request->mobil,
             'status' => 'pending'
         ]);
         if ($pesanan) {
@@ -102,10 +109,48 @@ class PesananController extends Controller
      */
     public function show(string $id)
     {
-        $pesanan = Pesanan::with('paket', 'user', 'jadwal')->findOrFail($id);
+        $pesanan = Pesanan::with('paket', 'user', 'jadwal.instruktur')->findOrFail($id);
+        $jadwalList = $pesanan->jadwal ?? collect();
+        $totalJamTerpakai = 0;
+        $jadwalDetails = [];
+
+        foreach ($jadwalList as $jadwal) {
+            if ($jadwal->waktu_mulai && $jadwal->waktu_selesai) {
+                try {
+                    $mulai = Carbon::createFromFormat('H:i:s', $jadwal->waktu_mulai);
+                    $selesai = Carbon::createFromFormat('H:i:s', $jadwal->waktu_selesai);
+                    $jamPerjadwal = $selesai->diffInMinutes($mulai) / 60;
+                    $totalJamTerpakai += $jadwal->status === 'finished' ? $jamPerjadwal : 0;
+
+                    $jadwalDetails[] = [
+                        'instruktur' => $jadwal->instruktur->name,
+                        'waktu_mulai' => $jadwal->waktu_mulai,
+                        'waktu_selesai' => $jadwal->waktu_selesai,
+                        'jumlah_jam' => round($jamPerjadwal, 2),
+                        'status' => $jadwal->status
+                    ];
+                } catch (\Exception $e) {
+                    Log::error('Error parsing waktu: ' . $e->getMessage());
+                }
+            }
+        }
+
+        $totalJamPaket = (float) $pesanan->paket->jumlah_jam;
+        $sisaJam = $totalJamPaket - $totalJamTerpakai;
+
         return response()->json([
             'success' => true,
-            'data' => $pesanan
+            'data' => [
+                'pesanan_id' => $pesanan->id,
+                'nama_user' => $pesanan->user->name,
+                'nama_paket' => $pesanan->paket->nama_paket,
+                'status' => $pesanan->status,
+                'jumlah_jam_paket' => $totalJamPaket,
+                'jam_terpakai' => round($totalJamTerpakai, 2),
+                'jam_sisa' => round(max($sisaJam, 0), 2),
+                'bukti_pembayaran' => env('APP_STORAGE') . $pesanan->bukti_pembayaran,
+                'jadwal' => $jadwalDetails
+            ]
         ]);
     }
 
@@ -130,6 +175,59 @@ class PesananController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Pesanan berhasil diperbarui',
+            'pesanan' => $pesanan
+        ]);
+    }
+    
+    public function changeStatus(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => ['required', 'in:pending,processing,success,failed']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
+
+        $pesanan = Pesanan::findOrFail($id);
+        $pesanan->update($request->all());
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesanan berhasil diperbarui',
+            'pesanan' => $pesanan
+        ]);
+    }
+
+    public function uploadBukti(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'bukti' => ['required', 'image', 'max:2048'] // max 2MB
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
+    
+        $pesanan = Pesanan::findOrFail($id);
+    
+        // Simpan file ke storage/app/public/buktipembayaran dengan nama acak
+        $file = $request->file('bukti');
+        $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs('buktipembayaran', $filename, 'public');
+    
+        // Simpan path ke database (jika ingin hanya nama file, cukup $filename)
+        $pesanan->bukti_pembayaran = $path;
+        $pesanan->save();
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Bukti pembayaran berhasil diupload',
             'pesanan' => $pesanan
         ]);
     }

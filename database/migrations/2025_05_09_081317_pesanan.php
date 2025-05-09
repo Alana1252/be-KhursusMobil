@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('paket_id')->constrained('paket');
+            $table->string('mobil');
             $table->string('bukti_pembayaran')->nullable();
             $table->enum('status', ['pending', 'processing', 'success', 'failed'])->default('pending');
             $table->timestamps();
