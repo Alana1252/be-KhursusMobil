@@ -17,7 +17,10 @@ class OwnerController extends Controller
             'success' => true,
             'message' => 'Owner data retrieved successfully',
             'data' => [
-                'nama_pemesan'
+                'nama_pemesan' => $pesanan->user->name,
+                'nama_paket' => $pesanan->paket->nama_paket,
+                'tanggal_pemesanan' => $pesanan->tanggal_pemesanan,
+                'status_pemesanan' => $pesanan->status_pemesanan,
             ]
         ]);
     }
