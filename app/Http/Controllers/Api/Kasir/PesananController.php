@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jadwal;
-use App\Models\Pesanan ;
+use App\Models\Pesanan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,10 +22,10 @@ class PesananController extends Controller
     public function index()
     {
         $pesananList = Pesanan::with(['paket', 'user', 'jadwal'])->get();
-    
+
         $result = $pesananList->map(function ($pesanan) {
             $jadwalList = $pesanan->jadwal ?? collect();
-    
+
             $totalJamTerpakai = $jadwalList->where('status', 'finished')->reduce(function ($carry, $jadwal) {
                 if ($jadwal->waktu_mulai && $jadwal->waktu_selesai) {
                     try {
@@ -40,10 +40,10 @@ class PesananController extends Controller
                 }
                 return $carry;
             }, 0);
-    
+
             $totalJamPaket = (float) $pesanan->paket->jumlah_jam;
             $sisaJam = $totalJamPaket - $totalJamTerpakai;
-    
+
             return [
                 'pesanan_id' => $pesanan->id,
                 'nama_user' => $pesanan->user->name,
@@ -54,24 +54,37 @@ class PesananController extends Controller
                 'jam_terpakai' => round($totalJamTerpakai, 2),
                 'jam_sisa' => round(max($sisaJam, 0), 2),
                 'bukti_pembayaran' => env('APP_STORAGE') . $pesanan->bukti_pembayaran,
-            ];  
+            ];
         });
-    
+
         return response()->json([
             'success' => true,
             'data' => $result
         ]);
     }
-    
+
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-
         $user = Auth::user();
 
+        // ✅ CEK apakah user masih memiliki pesanan aktif (pending atau processing)
+        $existing = Pesanan::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kamu masih memiliki pesanan yang belum selesai.',
+                'pesanan' => $existing,
+            ], 409); // HTTP 409 Conflict
+        }
+
+        // Validasi input
         $validator = Validator::make($request->all(), [
             'id_paket' => ['required', 'exists:paket,id'],
             'mobil' => ['required', 'string'],
@@ -84,12 +97,14 @@ class PesananController extends Controller
             ], 422);
         }
 
+        // Simpan pesanan baru
         $pesanan = Pesanan::create([
             'paket_id' => $request->id_paket,
             'user_id' => $user->id,
             'mobil' => $request->mobil,
             'status' => 'pending'
         ]);
+
         if ($pesanan) {
             return response()->json([
                 'success' => true,
@@ -178,7 +193,7 @@ class PesananController extends Controller
             'pesanan' => $pesanan
         ]);
     }
-    
+
     public function changeStatus(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
@@ -206,25 +221,25 @@ class PesananController extends Controller
         $validator = Validator::make($request->all(), [
             'bukti' => ['required', 'image', 'max:2048'] // max 2MB
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => $validator->errors()
             ], 422);
         }
-    
+
         $pesanan = Pesanan::findOrFail($id);
-    
+
         // Simpan file ke storage/app/public/buktipembayaran dengan nama acak
         $file = $request->file('bukti');
         $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
         $path = $file->storeAs('buktipembayaran', $filename, 'public');
-    
+
         // Simpan path ke database (jika ingin hanya nama file, cukup $filename)
         $pesanan->bukti_pembayaran = $path;
         $pesanan->save();
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Bukti pembayaran berhasil diupload',
