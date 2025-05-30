@@ -1,11 +1,11 @@
 /.phpunit.cache
-/node_modules
-/public/build
+# /node_modules
+# /public/build
 /public/hot
-/public/storage
+# /public/storage
 /storage/*.key
-/vendor
-.env
+# /vendor
+# .env
 .env.backup
 .env.production
 Homestead.json
