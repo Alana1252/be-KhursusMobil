@@ -11,7 +11,7 @@ class PaketController extends Controller
 {
     public function index()
     {
-        return response()->json([   
+        return response()->json([
             'success' => true,
             'data' => Paket::all()
         ]);
@@ -22,6 +22,7 @@ class PaketController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_paket' => ['required', 'string'],
             'jumlah_jam' => ['required', 'string'],
+            'no_rekening' => ['required', 'string'],
             'deskripsi' => ['required', 'string'],
             'harga' => ['required', 'numeric'],
         ]);
@@ -54,6 +55,7 @@ class PaketController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_paket' => ['required', 'string'],
             'jumlah_jam' => ['required', 'string'],
+            'no_rekening' => ['required', 'string'],
             'deskripsi' => ['required', 'string'],
             'harga' => ['required', 'numeric'],
         ]);
@@ -73,12 +75,13 @@ class PaketController extends Controller
         ]);
     }
 
-    public function destroy(Paket $paket)
+   public function destroy(Paket $paket)
     {
-        $paket->delete();
+        $paket->delete(); // Ini akan otomatis hapus pesanan terkait karena onDelete cascade
+
         return response()->json([
             'success' => true,
-            'message' => 'Paket deleted'
+            'message' => 'Paket dan pesanan terkait berhasil dihapus',
         ]);
     }
 }

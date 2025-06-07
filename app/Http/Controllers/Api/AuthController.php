@@ -18,29 +18,30 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'auth'     => ['required', 'string'],
             'password' => ['required', 'string'],
+
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => $validator->errors()
             ], 422);
         }
-    
+
         $user = User::where('username', $request->auth)
                     ->orWhere('no_hp', $request->auth)
                     ->first();
-    
+
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Username / No HP atau password salah'
             ], 401);
         }
-    
+
         $token = $user->createToken('auth_token')->plainTextToken;
         $role = $user->getRoleNames(); // Collection of role names
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil',
@@ -54,7 +55,7 @@ class AuthController extends Controller
             ]
         ]);
     }
-    
+
     // 📝 REGISTER
     public function register(Request $request)
     {
@@ -198,11 +199,16 @@ class AuthController extends Controller
 
     // ❌ DELETE USER
     public function destroy(User $user)
-    {
-        $user->delete();
-        return response()->json([
-            'success' => true,
-            'message' => 'User berhasil dihapus'
-        ]);
-    }
+{
+    // Hapus pesanan yang dimiliki user tersebut (jika memang tidak dibutuhkan)
+    $user->pesanan()->delete(); // Pastikan ada relasi pesanan() di model User
+
+    $user->delete();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'User berhasil dihapus'
+    ]);
+}
+
 }

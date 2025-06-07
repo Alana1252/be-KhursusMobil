@@ -324,8 +324,8 @@ class ComposerStaticInit6e468c24e5bbc9c10d1ce39146f92ce9
         ),
         'Spatie\\Ignition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/ignition/src',
-            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
+            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
+            1 => __DIR__ . '/..' . '/spatie/ignition/src',
         ),
         'Spatie\\FlareClient\\' => 
         array (
@@ -361,8 +361,8 @@ class ComposerStaticInit6e468c24e5bbc9c10d1ce39146f92ce9
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
-            1 => __DIR__ . '/..' . '/psr/http-factory/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -539,9 +539,12 @@ class ComposerStaticInit6e468c24e5bbc9c10d1ce39146f92ce9
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Http\\Controllers\\Api\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/AuthController.php',
-        'App\\Http\\Controllers\\Api\\JadwalSiswaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/JadwalSiswaController.php',
-        'App\\Http\\Controllers\\Api\\PaketController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/PaketController.php',
-        'App\\Http\\Controllers\\Api\\PesananController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/PesananController.php',
+        'App\\Http\\Controllers\\Api\\Instruktur\\InstrukturController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Instruktur/InstrukturController.php',
+        'App\\Http\\Controllers\\Api\\Kasir\\JadwalSiswaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Kasir/JadwalSiswaController.php',
+        'App\\Http\\Controllers\\Api\\Kasir\\PaketController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Kasir/PaketController.php',
+        'App\\Http\\Controllers\\Api\\Kasir\\PesananController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Kasir/PesananController.php',
+        'App\\Http\\Controllers\\Api\\Owner\\OwnerController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Owner/OwnerController.php',
+        'App\\Http\\Controllers\\Api\\Siswa\\SiswaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Siswa/SiswaController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',

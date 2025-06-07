@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_paket');
             $table->string('jumlah_jam');
+            $table->string('no_rekening');
             $table->string('deskripsi');
             $table->decimal('harga', 10, 2);
             $table->timestamps();
